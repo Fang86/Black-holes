@@ -26,6 +26,8 @@ var play = true;
 var r1;
 var initSep = 140;
 var momentum;
+var solar_mass = 1;
+var solar_radius = 1;
 
 function preload ()
 {
@@ -50,12 +52,12 @@ function create ()
     dbtext3 = this.add.text(0, 50, '');
 
     initPhys(planet_a, 0, 0, 5, 10);
-    initPhys(planet_b, 0, 0, 50, 75);
-    planet_b.xVel = vc(planet_b, planet_a);
-    planet_a.xVel = -vc(planet_b, planet_a);
+    initPhys(planet_b, 1.34, 0, 50, 65);
+    //planet_b.xVel = vc(planet_b, planet_a);
+    //planet_a.xVel = -vc(planet_b, planet_a);
 
     //r1 = this.add.circle(200, 200, 25, 0xff2222);
-    pl_a = this.add.circle(planet_a.x, planet_a.y, planet_a.radius, 0x0000ff);
+    pl_a = this.add.circle(planet_a.x, planet_a.y, planet_a.radius, 0x000000);
     rl_a = this.add.circle(planet_a.x, planet_a.y, 25, 0xffffff, .2);
     pl_b = this.add.circle(planet_b.x, planet_b.y, planet_b.radius, 0xff2222);
     rl_b = this.add.circle(planet_b.x, planet_b.y, 25, 0x000000, .4);
@@ -75,33 +77,34 @@ function update ()
     if (play)
     {
         orbit(planet_b, planet_a);
-        orbit(planet_a, planet_b);
+        //orbit(planet_a, planet_b);
         motion(planet_b);
-        motion(planet_a);
+        //motion(planet_a);
 
-    inputManager(this);
-    //r1.Transform.x += 1;
-    //dbtext.setText(this.scene.system.displayList.getChildren());
-    //r1.x += 1;
-    dbtext.setText(planet_b.mass + "TEST")
+    //dbtext.setText(planet_b.mass + "TEST")
     rl_b.radius = roche_radius(planet_b, planet_a);
     rl_a.radius = roche_radius(planet_a, planet_b);
     pl_b.radius = planet_b.radius
 
-    //overflow(planet_b, planet_a);
+    overflow(planet_b, planet_a);
+    age(planet_b);
     }
+
+    inputManager(this);
     
 }
 
-function initPhys(bd, xv, yv, m, r) // body, init x-vel, init y-vel, mass, radius
+function initPhys(bd, xv, yv, m, r) // body, init x-vel, init y-vel, solar masses, solar radii
 {
     bd.acc = 0; // Acceleration scalar
     bd.xAcc = 0; // Acceleration direction * scalar
     bd.yAcc = 0;
     bd.xVel = xv; // Velocity
     bd.yVel = yv;
-    bd.mass = m; // Mass of body
-    bd.radius = r; // Radius of body
+    bd.mass = m * solar_mass; // Mass of body
+    bd.radius = r * solar_radius; // Radius of body
+    bd.density = bd.mass / (Math.PI * Math.pow(bd.radius, 2))
+    bd.initmass = m
 }
 
 function orbit(bd, parent) // Gravity on bd by parent (acceleration)
@@ -238,17 +241,25 @@ function inputManager(scn) // Handles inputs
 
 function overflow(donor, rec) 
 { // Simulates roche lobe overflow with donor star and recipient star
-    var mtr = .1
+    var mtr = 1
     if (donor.radius > rl_b.radius) {
         var d_area = Math.PI * Math.pow(donor.radius, 2); // Donor area
         var r_area = Math.PI * Math.pow(rl_b.radius, 2); // Roche lobe area
-        var d_dens = donor.mass / d_area; // Donor density
+        //donor.density = donor.mass / d_area; // Donor density
         var of_area = d_area - r_area; // Overflow area
-        var of_loss = of_area * d_dens; // Overflow loss
-        //donor.mass -= .1 * of_loss;
-        //d_area = donor.mass / d_dens
-        //donor.radius -= Math.pow(d_area / Math.PI, 1/2);
-        //rec.mass += mtr * of_loss;
+        var of_loss = of_area * donor.density; // Overflow mass loss
+        dbtext.setText(of_area + ", " + of_loss)
+        donor.mass -= mtr * of_loss;
+        rec.mass += mtr * of_loss;
+        //d_area = donor.mass / donor.density
+        //var init_rad = donor.radius
+        //d_area = 
+        donor.radius = Math.pow(r_area / Math.PI, 1/2);
+        //var d_mass = (donor.density * Math.PI * Math.pow(init_rad, 2)) - (donor.density * Math.PI * Math.pow(donor.radius, 2))
+        //donor.mass -= d_mass;
+        //rec.mass += d_mass;
+        console.log("dens, actual: " + donor.density + ", " + donor.mass / (Math.PI * Math.pow(donor.radius, 2)))
+        createGas(donor, of_area, of_loss)
     }
     
 }
@@ -276,6 +287,19 @@ function vc(child, parent) // Velocity for circular orbit
 }
 
 function age(bd) {
-    var growth_const = 1;
+    var init_rad = bd.radius
+    var growth_const = .1;
     bd.radius += growth_const;
+    var init_area = Math.PI * Math.pow(init_rad, 2)
+    var fin_area = Math.PI * Math.pow(bd.radius, 2)
+    var d_area = fin_area - init_area;
+    //bd.density -= bd.mass / (Math.PI * Math.pow(d_area, 2))
+}
+
+function createGas(bd, area, mass) {
+    var mass_per = 10
+    var count = Math.floor(mass / mass_per);
+    var rem = mass % mass_per;
+    console.log("mass: " + mass + ", " + bd.mass)
+    console.log ("count, rem: " + count + ", " + rem)
 }
