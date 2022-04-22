@@ -70,9 +70,9 @@ function create ()
     initPhys(planet_b, 1.34, 0, 50, 65);
 
     // Accretion disk
-    ad_outer = this.add.circle(planet_a.x, planet_a.y, 34, 0xffff00, .5);
-    ad_mid = this.add.circle(planet_a.x, planet_a.y, 23, 0xff8800, .5);
-    ad_inner = this.add.circle(planet_a.x, planet_a.y, 15, 0xff0000, .5);
+    ad_outer = this.add.circle(planet_a.x, planet_a.y, 30, 0xff8800, 1);
+    ad_mid = this.add.circle(planet_a.x, planet_a.y, 18, 0xffbb00, 1);
+    ad_inner = this.add.circle(planet_a.x, planet_a.y, 10, 0xffffff, 1); // xray
 
     // Planet and roche lobe circles
     pl_a = this.add.circle(planet_a.x, planet_a.y, planet_a.radius, 0x000000);
@@ -128,8 +128,9 @@ function update ()
         gasses.forEach(gas => {
             orbit(gas, planet_a);
             motion(gas);
-            //gas.xVel *= .999;
-            //gas.yVel *= .999;
+            gas.xVel *= .9999;
+            gas.yVel *= .9999;
+            // Friction
         });
 
         let xDiff = planet_b.x - planet_a.x; // delta x
@@ -346,7 +347,7 @@ function age(bd) {
 
 function createGas(bd, area, mass) {
     var mass_per = .5
-    var count = 5 + 3 * Math.floor(mass / mass_per);
+    var count = 3 * Math.floor(mass / mass_per);
     var rem = mass % mass_per;
     //console.log("mass: " + mass + ", " + bd.mass)
     //console.log ("count, rem: " + count + ", " + rem)
@@ -358,7 +359,7 @@ function createGas(bd, area, mass) {
     var angle;
 
     for (let i = 0; i < count + 1; i++) {
-        angle = center + center * .01 * (i - Math.floor(count / 2))
+        angle = center + center * .01 * (i - (count / 2))
         gasses.push(scn.add.circle(planet_b.x - planet_b.radius * Math.cos(angle), planet_b.y + planet_b.radius * Math.sin(angle), 2, 0xff0000))
         if (i==0) {
             initPhys(gasses[gasses.length - 1], planet_b.xVel, planet_b.yVel, 100, 1.5 + rem * 3);
